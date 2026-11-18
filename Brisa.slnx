@@ -1,0 +1,20 @@
+<Solution>
+  <Configurations>
+    <Platform Name="x64" />
+    <ProjectType Extension=".csproj" BasedOn=".csproj">
+      <Platform Project="x64" />
+    </ProjectType>
+  </Configurations>
+  <Folder Name="/src/">
+    <Project Path="src/Brisa.Bridge/Brisa.Bridge.csproj" />
+    <Project Path="src/Brisa.Core/Brisa.Core.csproj" />
+    <Project Path="src/Brisa.WinUI/Brisa.WinUI.csproj" />
+  </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/Brisa.Checks/Brisa.Checks.csproj" />
+    <Project Path="tests/Brisa.MediaProbe/Brisa.MediaProbe.csproj" />
+  </Folder>
+  <Folder Name="/tools/">
+    <Project Path="tools/Brisa.Setup/Brisa.Setup.csproj" />
+  </Folder>
+</Solution>

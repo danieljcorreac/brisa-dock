@@ -1,0 +1,24 @@
+name: Bug report
+description: Report reproducible behavior.
+title: "[Bug] "
+body:
+  - type: markdown
+    attributes:
+      value: "Do not attach tokens, settings, sessions or account content. For vulnerabilities read SECURITY.md."
+  - type: input
+    id: version
+    attributes:
+      label: Brisa and Windows versions
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: Reproduction steps and expected/actual results
+    validations:
+      required: true
+  - type: textarea
+    id: evidence
+    attributes:
+      label: Evidence with sample data
+      description: Include relevant theme, scale, monitor details and screenshots without personal information.

@@ -1,0 +1,7 @@
+<Project>
+  <PropertyGroup>
+    <Version>0.17.5</Version>
+    <IncludeSourceRevisionInInformationalVersion>false</IncludeSourceRevisionInInformationalVersion>
+    <Deterministic>true</Deterministic>
+  </PropertyGroup>
+</Project>

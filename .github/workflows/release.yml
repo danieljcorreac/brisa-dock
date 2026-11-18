@@ -1,0 +1,69 @@
+name: Draft release
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: X.Y.Z version already merged into main and recorded in the changelog
+        type: string
+        required: true
+permissions:
+  contents: read
+concurrency:
+  group: release
+  cancel-in-progress: false
+jobs:
+  prepare:
+    if: github.ref == 'refs/heads/main'
+    runs-on: windows-2025
+    timeout-minutes: 45
+    permissions:
+      contents: write
+    env:
+      RELEASE_VERSION: ${{ inputs.version }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+          fetch-depth: 0
+      - uses: actions/setup-dotnet@0f4a354dd5547a28c70b7853dbd95d5b67886e73 # v6.1.0
+        with:
+          global-json-file: global.json
+      - name: Verify version and stable branch
+        shell: pwsh
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          if ($env:RELEASE_VERSION -notmatch '^\d+\.\d+\.\d+$') { throw 'Invalid version.' }
+          $version=([xml](Get-Content Directory.Build.props -Raw)).Project.PropertyGroup.Version
+          if ($version -ne $env:RELEASE_VERSION) { throw 'The source version does not match.' }
+          $head=gh api "repos/$env:GITHUB_REPOSITORY/commits/main" --jq .sha
+          if ($LASTEXITCODE -ne 0 -or $head -ne $env:GITHUB_SHA) { throw 'The commit is no longer the head of main.' }
+          gh api "repos/$env:GITHUB_REPOSITORY/git/ref/tags/v$env:RELEASE_VERSION" --silent 2>$null
+          if ($LASTEXITCODE -eq 0) { throw 'The tag already exists and will not be replaced.' }
+          $global:LASTEXITCODE=0
+          ./scripts/Get-ReleaseNotes.ps1 -Version $env:RELEASE_VERSION -OutputFile release-notes.md
+      - name: Audit and verify
+        shell: pwsh
+        run: |
+          ./scripts/Test-Repository.ps1
+          dotnet run --project tests/Brisa.Checks -c Release
+          if ($LASTEXITCODE -ne 0) { throw 'Core checks failed.' }
+          ./scripts/New-ReleasePackage.ps1
+          $build=(Get-Content artifacts/release-build-path.txt -Raw).Trim()
+          ./tests/Update.Checks.ps1 -SourceDirectory $build -BaselineDirectory $build
+          ./tests/Deployment.Checks.ps1 -SourceDirectory $build
+          ./tests/Distribution.Checks.ps1 -RequireRelease
+      - name: Create draft Release
+        shell: pwsh
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          $head=gh api "repos/$env:GITHUB_REPOSITORY/commits/main" --jq .sha
+          if ($LASTEXITCODE -ne 0 -or $head -ne $env:GITHUB_SHA) { throw 'main changed during preparation.' }
+          $release="artifacts/releases/$env:RELEASE_VERSION"
+          $files=@("$release/Brisa-$env:RELEASE_VERSION-win-x64.zip", "$release/Brisa-Setup-$env:RELEASE_VERSION-win-x64.exe", "$release/RELEASE-NOTES.md", "$release/SHA256SUMS.txt")
+          foreach ($file in $files) { if (!(Test-Path -LiteralPath $file -PathType Leaf)) { throw 'A required release asset is missing.' } }
+          gh api "repos/$env:GITHUB_REPOSITORY/git/refs" --method POST -f "ref=refs/tags/v$env:RELEASE_VERSION" -f "sha=$env:GITHUB_SHA" --silent
+          if ($LASTEXITCODE -ne 0) { throw 'The tag was not created: inspect remote state; existing tags are never replaced.' }
+          gh release create "v$env:RELEASE_VERSION" @files --repo $env:GITHUB_REPOSITORY --verify-tag --draft --title "Brisa $env:RELEASE_VERSION" --notes-file release-notes.md
+          if ($LASTEXITCODE -ne 0) { throw 'Could not create the draft; inspect remote state before retrying.' }

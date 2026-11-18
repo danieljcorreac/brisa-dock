@@ -1,0 +1,17 @@
+name: Improvement proposal
+description: Discuss an improvement before implementing it.
+title: "[Idea] "
+body:
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problem to solve
+    validations:
+      required: true
+  - type: textarea
+    id: proposal
+    attributes:
+      label: Proposal and alternatives
+      description: Identify any new provider, permission, account integration or widget required.
+    validations:
+      required: true

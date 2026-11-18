@@ -1,0 +1,47 @@
+name: Windows
+on:
+  pull_request:
+    branches: [main, develop]
+  push:
+    branches: [main, develop]
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  verify:
+    runs-on: windows-2025
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-dotnet@0f4a354dd5547a28c70b7853dbd95d5b67886e73 # v6.1.0
+        with:
+          global-json-file: global.json
+      - name: Audit repository files
+        shell: pwsh
+        run: ./scripts/Test-Repository.ps1
+      - name: Check Core logic
+        shell: pwsh
+        run: |
+          dotnet run --project tests/Brisa.Checks -c Release
+          if ($LASTEXITCODE -ne 0) { throw 'Core checks failed.' }
+      - name: Build in isolation
+        shell: pwsh
+        run: ./scripts/Build-Brisa.ps1
+      - name: Check updates and recovery
+        shell: pwsh
+        run: |
+          ./tests/Update.Checks.ps1 -SourceDirectory artifacts/build -BaselineDirectory artifacts/build
+          ./tests/Deployment.Checks.ps1 -SourceDirectory artifacts/build
+      - name: Build solution
+        shell: pwsh
+        run: |
+          dotnet build Brisa.slnx -c Release -p:Platform=x64 --nologo -v quiet
+          if ($LASTEXITCODE -ne 0) { throw 'Solution build failed.' }
+      - name: Check distribution
+        shell: pwsh
+        run: ./tests/Distribution.Checks.ps1
