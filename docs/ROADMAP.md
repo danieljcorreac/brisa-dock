@@ -6,10 +6,10 @@ Maintain project-owned source/docs, contribution guidance, isolated checks and r
 
 ## Distribution follow-up
 
-- Configure the default branch, available branch rules, private security reporting and Actions spending limits.
+- Maintain the public repository protections, required CI and private vulnerability reporting.
 - Run CI on GitHub and inspect the actual result; local checks do not substitute for it.
 - Create a draft Release, download its assets and test installation, update and rollback in isolation.
-- Keep remote-update verification covered by real private Release download checks; review public distribution separately.
+- Keep anonymous update verification covered by real public Release download checks.
 
 ## Coordinated user verification
 

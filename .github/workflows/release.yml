@@ -65,5 +65,5 @@ jobs:
           foreach ($file in $files) { if (!(Test-Path -LiteralPath $file -PathType Leaf)) { throw 'A required release asset is missing.' } }
           gh api "repos/$env:GITHUB_REPOSITORY/git/refs" --method POST -f "ref=refs/tags/v$env:RELEASE_VERSION" -f "sha=$env:GITHUB_SHA" --silent
           if ($LASTEXITCODE -ne 0) { throw 'The tag was not created: inspect remote state; existing tags are never replaced.' }
-          gh release create "v$env:RELEASE_VERSION" @files --repo $env:GITHUB_REPOSITORY --verify-tag --draft --title "Brisa $env:RELEASE_VERSION" --notes-file release-notes.md
+          gh release create "v$env:RELEASE_VERSION" @files --repo $env:GITHUB_REPOSITORY --verify-tag --target "$env:GITHUB_SHA" --draft --title "Brisa $env:RELEASE_VERSION" --notes-file release-notes.md
           if ($LASTEXITCODE -ne 0) { throw 'Could not create the draft; inspect remote state before retrying.' }
