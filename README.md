@@ -23,7 +23,7 @@ A customizable Windows dock for your apps, shortcuts and everyday tools, built w
 
 Real application screenshots with **sample data**, not live account information. The application currently uses Spanish UI text; source identifiers, comments, file names and repository documentation use English.
 
-**Status:** public preview, **0.17.6**. Download the installer from [GitHub Releases](https://github.com/danieljcorreac/brisa-dock/releases/latest), report issues or propose changes through a pull request.
+**Status:** public preview, **0.17.7**. Download the installer from [GitHub Releases](https://github.com/danieljcorreac/brisa-dock/releases/latest), report issues or propose changes through a pull request.
 
 ## Features
 
@@ -42,11 +42,11 @@ ChatGPT usage means **Codex plan limits**, not chat message counts or API spendi
 
 The verified target is **Windows 11 x64**. Other architectures and Windows 10 are not presented as supported or tested.
 
-Once a Release is published, download `Brisa-Setup-<version>-win-x64.exe` or the matching ZIP. Both include their runtimes. The installer works per user; the ZIP provides `Install-Brisa.cmd` and a `maintenance/` directory.
+From the latest Release, download `Brisa-Setup-<version>-win-x64.exe` or the matching ZIP. Both include their runtimes. The installer works per user; the ZIP provides `Install-Brisa.cmd` and a `maintenance/` directory.
 
 Packages do not carry a commercial code-signing certificate. SHA-256 checks integrity against an expected hash; it does not authenticate the publisher. Do not disable Windows protections to run a package.
 
-No Release files have been published yet. To prepare them locally:
+To prepare the same package locally:
 
 ```powershell
 pwsh -File scripts/New-ReleasePackage.ps1
@@ -82,7 +82,7 @@ The repository has no `dist` or version-suffixed distribution directories. Gener
 
 ## Use and local data
 
-The gear opens preferences, `+` manages the existing widget collection and the pencil enables dock ordering. Shortcut rows support dragging, editing and unpinning. Back arrows navigate within panels; Escape closes them.
+The gear opens preferences, `+` manages the existing widget collection and the pencil enables dock ordering. Shortcut rows support dragging, editing and unpinning. Back arrows navigate within panels. Click outside a panel to dismiss it, or use Escape and the close button. File and folder pickers stay in front of the panel that opened them.
 
 Application data lives in `data/` inside its installation. Never attach it to issues or PRs. Backups can include private notes, tasks and paths: review them before sharing.
 

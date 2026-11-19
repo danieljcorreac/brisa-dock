@@ -57,8 +57,7 @@ public sealed partial class MainWindow
         {
             if (choosingUpdate || startingMaintenance) return;
             choosingUpdate = true;
-            var picker = new Windows.Storage.Pickers.FolderPicker(); picker.FileTypeFilter.Add("*"); WinRT.Interop.InitializeWithWindow.Initialize(picker, WinRT.Interop.WindowNative.GetWindowHandle(this));
-            try { var folder = await picker.PickSingleFolderAsync(); if (folder == null || closing) return; status.Text = "Comprobando los archivos del paquete…"; var package = await Task.Run(() => VerifyLocalPackage(folder.Path)); if (closing || panel?.PageId != "installation") return; ShowUpdatePreview(folder.Path, package); }
+            var picker = new Windows.Storage.Pickers.FolderPicker(); picker.FileTypeFilter.Add("*"); try { var folder = await PickForPanel(picker, () => picker.PickSingleFolderAsync()); if (folder == null || closing) return; status.Text = "Comprobando los archivos del paquete…"; var package = await Task.Run(() => VerifyLocalPackage(folder.Path)); if (closing || panel?.PageId != "installation") return; ShowUpdatePreview(folder.Path, package); }
             catch (Exception e) when (e is IOException or UnauthorizedAccessException or JsonException or System.Runtime.InteropServices.COMException or ArgumentException) { status.Text = "No se pudo comprobar ese paquete. " + e.Message; }
             finally { choosingUpdate = false; }
         }); choose.IsEnabled = managed; body.Children.Add(choose);

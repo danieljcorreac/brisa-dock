@@ -19,3 +19,5 @@ Native adapters handle desktop reservation, the notification area and shortcuts.
 The notification-area quick menu has its own `TrayMenuWindow`. Its screen anchor comes from `Shell_NotifyIconGetRect`, with a cursor fallback, and `TrayMenuLayout` fits it to the anchor monitor. Opening the menu never uses or repositions the dock's XAML root. Selecting a dock-related command explicitly reveals the dock and opens the associated panel there.
 
 Setup keeps its entry point, presentation (`SetupWindow`/`SetupControls`) and existing installation backend separate. Owner-drawn controls retain native button/checkbox accessibility and keyboard behavior; Windows supplies the outer rounded window corners. Safe preview states exercise layout without installing files.
+
+Panels dismiss on activation loss without returning focus to the dock. File/folder pickers go through `PickForPanel`, which owns them from the visible panel and holds a dismissal lease only for the picker operation. Deactivation from owned native popup windows is ignored; stale queued content layout work is invalidated on dismissal. Explicit close and Escape retain dock keyboard focus restoration.
