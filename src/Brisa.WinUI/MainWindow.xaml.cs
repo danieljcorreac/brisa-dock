@@ -263,7 +263,7 @@ public sealed partial class MainWindow : Window
         if (closing) return;
         title = id switch { "system" => "Sistema", "tasks" => "Tareas", "calendar" => "Calendario", "timer" => "Temporizador", "stopwatch" => "Cronómetro", "focus" => "Foco", "weather" => "Tiempo", "music" => "Reproducción", "sound" => "Sonido", "notes" => "Notas", "battery" => "Batería", "world-time" => "Hora mundial", "storage" => "Almacenamiento", "network" => "Red", "search" => "Buscar", "recycle-bin" => "Papelera", _ => title };
         livePanelUpdate = null;
-        if (panel == null) { panel = new PanelWindow(ConfigureKeyboard); panel.Dismissed += RestoreDockFocus; panel.Closed += (_, _) => panel = null; }
+        if (panel == null) { panel = new PanelWindow(ConfigureKeyboard); panel.Dismissed += restoreFocus => { if (restoreFocus) RestoreDockFocus(); }; panel.Closed += (_, _) => panel = null; }
         dockBehavior?.Reveal();
         double? anchorX = null;
         try
@@ -284,7 +284,7 @@ public sealed partial class MainWindow : Window
     {
         if (pickingShortcut) return;
         pickingShortcut = true;
-        try { var picker = new Windows.Storage.Pickers.FileOpenPicker(); WinRT.Interop.InitializeWithWindow.Initialize(picker, WinRT.Interop.WindowNative.GetWindowHandle(this)); picker.FileTypeFilter.Add("*"); var file = await picker.PickSingleFileAsync(); if (file != null && !closing) { if (settings.Apps.Count >= 20) { ShowMessage("Dock completo", "Puedes añadir hasta 20 accesos. Quita alguno antes de añadir otro."); return; } if (PinApplication(System.IO.Path.GetFileNameWithoutExtension(file.Name), file.Path)) ShowAppsManager(); else ShowMessage("Acceso ya fijado", "Este acceso ya está guardado en Aplicaciones y carpetas. Allí puedes mostrar la sección en el dock."); } }
+        try { var picker = new Windows.Storage.Pickers.FileOpenPicker(); picker.FileTypeFilter.Add("*"); var file = await PickForPanel(picker, () => picker.PickSingleFileAsync()); if (file != null && !closing) { if (settings.Apps.Count >= 20) { ShowMessage("Dock completo", "Puedes añadir hasta 20 accesos. Quita alguno antes de añadir otro."); return; } if (PinApplication(System.IO.Path.GetFileNameWithoutExtension(file.Name), file.Path)) ShowAppsManager(); else ShowMessage("Acceso ya fijado", "Este acceso ya está guardado en Aplicaciones y carpetas. Allí puedes mostrar la sección en el dock."); } }
         catch { ShowMessage("No se pudo elegir el archivo", "Vuelve a abrir el selector de aplicaciones."); }
         finally { pickingShortcut = false; }
     }

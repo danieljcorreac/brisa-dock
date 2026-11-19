@@ -5,6 +5,16 @@ using Windows.Graphics;
 namespace Brisa.WinUI;
 internal static class Native
 {
+    [DllImport("user32.dll")] static extern nint GetForegroundWindow();
+    [DllImport("user32.dll")] static extern nint GetWindow(nint hwnd, uint command);
+    public static bool IsForeground(Window window) => GetForegroundWindow() == WinRT.Interop.WindowNative.GetWindowHandle(window);
+    public static bool ForegroundOwnedBy(Window window)
+    {
+        nint foreground = GetForegroundWindow(), owner = WinRT.Interop.WindowNative.GetWindowHandle(window);
+        for (int depth = 0; foreground != 0 && depth < 16; depth++, foreground = GetWindow(foreground, 4))
+            if (foreground == owner) return true;
+        return false;
+    }
     [DllImport("user32.dll")] static extern uint GetDpiForWindow(nint hwnd);
     [DllImport("user32.dll", SetLastError = true)] static extern bool SetWindowPos(nint hwnd, nint insertAfter, int x, int y, int cx, int cy, uint flags);
     [DllImport("user32.dll", EntryPoint = "GetWindowLongPtrW")] static extern nint GetWindowLongPtr(nint hwnd, int index);

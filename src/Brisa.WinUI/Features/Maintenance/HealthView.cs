@@ -35,8 +35,7 @@ public sealed partial class MainWindow
         body.Children.Add(Ui.Button("Guardar diagnóstico", "Guardar medidas de Brisa sin datos de cuentas", async () =>
         {
             var picker = new Windows.Storage.Pickers.FileSavePicker { SuggestedFileName = "Brisa-diagnostico" }; picker.FileTypeChoices.Add("Diagnóstico JSON", new List<string> { ".json" });
-            WinRT.Interop.InitializeWithWindow.Initialize(picker, WinRT.Interop.WindowNative.GetWindowHandle(this));
-            try { var file = await picker.PickSaveFileAsync(); if (file == null || closing) return; var report = new { Version = typeof(MainWindow).Assembly.GetName().Version?.ToString(), Metrics = RuntimeHealth.Capture(background.RunningCount) }; await File.WriteAllTextAsync(file.Path, JsonSerializer.Serialize(report, new JsonSerializerOptions { WriteIndented = true })); status.Text = "Diagnóstico guardado. Contiene medidas de consumo y estado, sin tokens ni contenido de tus cuentas."; }
+            try { var file = await PickForPanel(picker, () => picker.PickSaveFileAsync()); if (file == null || closing) return; var report = new { Version = typeof(MainWindow).Assembly.GetName().Version?.ToString(), Metrics = RuntimeHealth.Capture(background.RunningCount) }; await File.WriteAllTextAsync(file.Path, JsonSerializer.Serialize(report, new JsonSerializerOptions { WriteIndented = true })); status.Text = "Diagnóstico guardado. Contiene medidas de consumo y estado, sin tokens ni contenido de tus cuentas."; }
             catch (Exception e) when (e is IOException or UnauthorizedAccessException or System.Runtime.InteropServices.COMException) { status.Text = "No se pudo guardar el diagnóstico."; }
         }));
         ShowPage("health", "Estado de Brisa", "CONSUMO · ESTABILIDAD", body); Update(); livePanelUpdate = Update;

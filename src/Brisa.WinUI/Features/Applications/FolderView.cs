@@ -15,8 +15,7 @@ public sealed partial class MainWindow
         pickingShortcut = true;
         try
         {
-            var picker = new FolderPicker(); picker.FileTypeFilter.Add("*"); WinRT.Interop.InitializeWithWindow.Initialize(picker, WinRT.Interop.WindowNative.GetWindowHandle(this));
-            var folder = await picker.PickSingleFolderAsync(); if (folder == null || closing) return;
+            var picker = new FolderPicker(); picker.FileTypeFilter.Add("*"); var folder = await PickForPanel(picker, () => picker.PickSingleFolderAsync()); if (folder == null || closing) return;
             if (settings.Apps.Count >= 20) { ShowMessage("Dock completo", "Puedes fijar hasta 20 accesos. Retira uno antes de añadir otra carpeta."); return; }
             if (PinApplication(folder.DisplayName, folder.Path, true)) ShowAppsManager();
             else ShowMessage("Carpeta ya fijada", "Esta carpeta ya está en tus accesos. Puedes verla y organizarla en Aplicaciones y carpetas.");
