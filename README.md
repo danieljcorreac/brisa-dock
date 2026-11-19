@@ -23,7 +23,7 @@ A customizable Windows dock for your apps, shortcuts and everyday tools, built w
 
 Real application screenshots with **sample data**, not live account information. The application currently uses Spanish UI text; source identifiers, comments, file names and repository documentation use English.
 
-**Status:** first personal release, **0.17.5**, distributed through the private [GitHub repository](https://github.com/danieljcorreac/brisa-dock). Public availability is a separate future decision.
+**Status:** public preview, **0.17.6**. Download the installer from [GitHub Releases](https://github.com/danieljcorreac/brisa-dock/releases/latest), report issues or propose changes through a pull request.
 
 ## Features
 
@@ -34,7 +34,7 @@ Real application screenshots with **sample data**, not live account information.
 - Claude Desktop/Claude Code usage and ChatGPT plan limits returned by Codex.
 - Reviewable backups, settings recovery, local updates and version rollback.
 - Notification-area integration, keyboard navigation and accessibility preferences.
-- Daily stable-release checking, verified GitHub downloads and review before updating. Private releases use your existing GitHub CLI session without copying its token into Brisa.
+- Daily stable-release checking, verified GitHub downloads and review before updating. Updates use anonymous HTTPS, without a GitHub account, token or GitHub CLI.
 
 ChatGPT usage means **Codex plan limits**, not chat message counts or API spending. External integrations may change. See [connections and privacy](docs/AI.md).
 

@@ -712,13 +712,25 @@ using (var archiveFixture = ArchiveFixture())
         Check(request.RequestUri!.AbsoluteUri == "https://api.github.com/repos/danieljcorreac/brisa-dock/releases/latest" && request.Headers.Authorization == null, "Public release checking uses only the fixed repository without credentials");
         return new(HttpStatusCode.OK) { Content = new StringContent(Metadata(digest)) };
     }));
-    using var publicUpdates = new GitHubUpdates(http, useGitHubCli: false);
+    using var publicUpdates = new GitHubUpdates(http);
     Check(await publicUpdates.CheckAsync(new Version(1, 0, 0), CancellationToken.None) != null, "Public update metadata works without GitHub CLI");
+    using var unavailableHttp = new HttpClient(new QuotaTestHttpHandler(_ => new(HttpStatusCode.NotFound)));
+    using var unavailableUpdates = new GitHubUpdates(unavailableHttp);
+    try { await unavailableUpdates.CheckAsync(new Version(1, 0, 0), CancellationToken.None); Check(false, "Unavailable release must fail clearly"); }
+    catch (IOException error) { Check(!error.Message.Contains("CLI", StringComparison.Ordinal), "An unavailable public release never asks for CLI authentication"); }
+    using var limitedHttp = new HttpClient(new QuotaTestHttpHandler(_ => { var response = new HttpResponseMessage(HttpStatusCode.Forbidden); response.Headers.Add("X-RateLimit-Remaining", "0"); return response; }));
+    using var limitedUpdates = new GitHubUpdates(limitedHttp);
+    try { await limitedUpdates.CheckAsync(new Version(1, 0, 0), CancellationToken.None); Check(false, "Rate-limited release query must fail clearly"); }
+    catch (IOException error) { Check(error.Message.Contains("temporalmente", StringComparison.Ordinal), "Public API rate limits produce a retry-later message instead of an authentication flow"); }
+    using var oversizedHttp = new HttpClient(new QuotaTestHttpHandler(_ => new(HttpStatusCode.OK) { Content = new ByteArrayContent(new byte[2097153]) }));
+    using var oversizedUpdates = new GitHubUpdates(oversizedHttp);
+    try { await oversizedUpdates.CheckAsync(new Version(1, 0, 0), CancellationToken.None); Check(false, "Oversized release metadata must fail"); }
+    catch (InvalidDataException) { Check(true, "Anonymous metadata downloads enforce their size limit before parsing"); }
     using var binaryHttp = new HttpClient(new QuotaTestHttpHandler(request => {
-        Check(request.RequestUri!.AbsolutePath.EndsWith("/releases/assets/123", StringComparison.Ordinal), "Asset download derives its endpoint from the verified numeric asset identifier");
+        Check(request.RequestUri!.AbsolutePath.EndsWith("/releases/assets/123", StringComparison.Ordinal) && request.Headers.Authorization == null, "Anonymous asset download uses the fixed repository and verified asset identifier without credentials");
         return new(HttpStatusCode.OK) { Content = new ByteArrayContent(bytes) };
     }));
-    using var downloads = new GitHubUpdates(binaryHttp, useGitHubCli: false);
+    using var downloads = new GitHubUpdates(binaryHttp);
     // ArchiveFixture's own version is authoritative; a different release tag must be rejected.
     try { await downloads.DownloadAsync(available!, Path.Combine(directory, "remote-mismatch"), CancellationToken.None); Check(false, "Mismatched package must fail"); }
     catch (InvalidDataException) { Check(!Directory.EnumerateFileSystemEntries(Path.Combine(directory, "remote-mismatch")).Any(), "Mismatched archive versions are rejected and their temporary files removed"); }

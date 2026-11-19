@@ -1,4 +1,3 @@
-using System.Diagnostics;
 using System.Net;
 using System.Net.Http.Headers;
 using System.Security.Cryptography;
@@ -46,28 +45,21 @@ public sealed record GitHubUpdate(string Version, long AssetId, long Size, strin
     }
 }
 
-// No token is read or persisted by Brisa. Private access stays inside GitHub CLI.
+// Public releases use anonymous HTTPS only; no CLI, account or credential discovery.
 public sealed class GitHubUpdates : IDisposable
 {
     readonly HttpClient http;
     readonly bool ownsHttp;
-    readonly string? cli;
-    public GitHubUpdates(HttpClient? client = null, bool useGitHubCli = true)
+    public GitHubUpdates(HttpClient? client = null)
     {
-        http = client ?? new HttpClient(); ownsHttp = client == null;
-        if (useGitHubCli && OperatingSystem.IsWindows())
-        {
-            var candidates = new[] { Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ProgramFiles), "GitHub CLI", "gh.exe") }
-                .Concat((Environment.GetEnvironmentVariable("PATH") ?? "").Split(Path.PathSeparator).Where(p => !string.IsNullOrWhiteSpace(p)).Select(p => Path.Combine(p.Trim('"'), "gh.exe")));
-            cli = candidates.FirstOrDefault(File.Exists);
-        }
+        http = client ?? new HttpClient(new HttpClientHandler { UseCookies = false }) { Timeout = Timeout.InfiniteTimeSpan }; ownsHttp = client == null;
     }
     public async Task<GitHubUpdate?> CheckAsync(Version current, CancellationToken token)
     {
         using var deadline = CancellationTokenSource.CreateLinkedTokenSource(token); deadline.CancelAfter(TimeSpan.FromSeconds(30));
         using var output = new MemoryStream();
         try { await FetchAsync($"repos/{GitHubUpdate.Repository}/releases/latest", false, output, 2097152, deadline.Token); }
-        catch (HttpRequestException error) when (error.StatusCode == HttpStatusCode.NotFound) { throw new IOException("No hay una versión accesible. Si el repositorio es privado, inicia sesión en GitHub CLI con una cuenta que tenga acceso."); }
+        catch (HttpRequestException error) when (error.StatusCode == HttpStatusCode.NotFound) { throw new IOException("No hay una versión pública disponible. Puedes volver a intentarlo más tarde."); }
         return GitHubUpdate.Parse(System.Text.Encoding.UTF8.GetString(output.ToArray()), current);
     }
     public async Task<string> DownloadAsync(GitHubUpdate update, string cacheRoot, CancellationToken token)
@@ -98,25 +90,13 @@ public sealed class GitHubUpdates : IDisposable
     }
     async Task FetchAsync(string endpoint, bool binary, Stream output, long maximum, CancellationToken token)
     {
-        if (cli != null)
-        {
-            var info = new ProcessStartInfo(cli) { UseShellExecute = false, CreateNoWindow = true, RedirectStandardOutput = true, RedirectStandardError = true };
-            foreach (var arg in new[] { "api", "--hostname", "github.com", endpoint, "--method", "GET", "--header", binary ? "Accept: application/octet-stream" : "Accept: application/vnd.github+json" }) info.ArgumentList.Add(arg);
-            info.Environment.Remove("GH_DEBUG"); info.Environment["GH_PROMPT_DISABLED"] = "1";
-            using var process = Process.Start(info) ?? throw new IOException("No se pudo iniciar GitHub CLI.");
-            var error = process.StandardError.ReadToEndAsync(token);
-            try
-            {
-                await CopyBounded(process.StandardOutput.BaseStream, output, maximum, token);
-                await process.WaitForExitAsync(token); await error;
-                if (process.ExitCode != 0) throw new IOException("No se pudo consultar GitHub. Comprueba tu conexión y la sesión de GitHub CLI para acceder al repositorio privado.");
-            }
-            finally { if (!process.HasExited) process.Kill(entireProcessTree: true); }
-            return;
-        }
         using var request = new HttpRequestMessage(HttpMethod.Get, "https://api.github.com/" + endpoint);
         request.Headers.UserAgent.ParseAdd("BrisaDock/1.0"); request.Headers.Accept.Add(new MediaTypeWithQualityHeaderValue(binary ? "application/octet-stream" : "application/vnd.github+json"));
-        using var response = await http.SendAsync(request, HttpCompletionOption.ResponseHeadersRead, token); response.EnsureSuccessStatusCode();
+        request.Headers.Add("X-GitHub-Api-Version", "2022-11-28");
+        using var response = await http.SendAsync(request, HttpCompletionOption.ResponseHeadersRead, token);
+        if (response.StatusCode == HttpStatusCode.TooManyRequests || response.StatusCode == HttpStatusCode.Forbidden && response.Headers.TryGetValues("X-RateLimit-Remaining", out var remaining) && remaining.Contains("0"))
+            throw new IOException("GitHub ha limitado temporalmente las consultas. Espera un poco antes de volver a intentarlo.");
+        response.EnsureSuccessStatusCode();
         if (response.Content.Headers.ContentLength > maximum) throw new InvalidDataException("La descarga supera su tamaño permitido.");
         using var input = await response.Content.ReadAsStreamAsync(token); await CopyBounded(input, output, maximum, token);
     }

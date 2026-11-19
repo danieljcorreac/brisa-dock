@@ -22,7 +22,7 @@ public sealed partial class MainWindow
         body.Children.Add(Ui.Text("ACTUALIZACIONES DE GITHUB", 11, Ui.MutedColor, true));
         var automatic = new ToggleSwitch { Header = "Buscar nuevas versiones una vez al día", IsOn = settings.CheckForUpdates };
         automatic.Toggled += (_, _) => { settings.CheckForUpdates = automatic.IsOn; Save(); }; body.Children.Add(automatic);
-        body.Children.Add(Ui.Text("Brisa avisa si hay una versión estable y verifica la descarga antes de aplicarla. Para acceder al repositorio privado utiliza tu sesión de GitHub CLI; Brisa no guarda su token.", 12, Ui.MutedColor));
+        body.Children.Add(Ui.Text("Brisa avisa si hay una versión estable y verifica la descarga antes de aplicarla. Las consultas y descargas son públicas: no necesitas una cuenta de GitHub ni instalar herramientas adicionales.", 12, Ui.MutedColor));
         var check = Ui.Button(checkingRelease ? "Comprobando…" : "Buscar actualizaciones", "Consultar la última versión estable de Brisa", async () =>
         {
             await CheckReleaseUpdatesAsync(status);
