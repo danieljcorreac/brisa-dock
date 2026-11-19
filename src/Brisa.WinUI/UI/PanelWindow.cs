@@ -25,6 +25,9 @@ internal sealed class PanelWindow : Window
     long resizeStarted;
     double resizeScale;
     bool closed;
+    bool active, restoreFocusAfterDismiss, returningFromPicker;
+    int ownedInteractions;
+    Window? dockOwner;
     int contentRevision;
     bool backdropLight = Ui.Light;
     bool backdropTranslucent = Ui.Translucent;
@@ -38,7 +41,7 @@ internal sealed class PanelWindow : Window
     readonly PanelAnchor navigationAnchor = new();
     internal ScrollViewer PreviewViewport => scroll;
     public string PageId { get; private set; } = "";
-    public event Action? Dismissed;
+    public event Action<bool>? Dismissed;
     public PanelWindow(Action<UIElement>? configureKeyboard = null)
     {
         Title = "Brisa · Tu espacio"; AppWindow.IsShownInSwitchers = false; Native.SetAppIcon(this); if (Ui.Translucent) SystemBackdrop = new GlassBackdrop(Ui.Light, Ui.TintStrength, Ui.BaseColor);
@@ -60,7 +63,11 @@ internal sealed class PanelWindow : Window
         var goBack = new Microsoft.UI.Xaml.Input.KeyboardAccelerator { Key = VirtualKey.Left, Modifiers = VirtualKeyModifiers.Menu };
         goBack.Invoked += (_, e) => { if (backAction != null) { e.Handled = true; backAction(); } }; shell.KeyboardAccelerators.Add(goBack);
         shell.KeyDown += (_, e) => { if (e.Key == VirtualKey.Escape) { e.Handled = true; Dismiss(); } }; Native.Style(this);
-        dismissTimer.Tick += (_, _) => { dismissTimer.Stop(); AppWindow.Hide(); Dismissed?.Invoke(); };
+        dismissTimer.Tick += (_, _) => { dismissTimer.Stop(); FinishDismiss(); };
+        Activated += (_, e) => {
+            active = e.WindowActivationState != WindowActivationState.Deactivated;
+            if (!active) CheckOutsideDismiss();
+        };
         resizeTimer.Tick += (_, _) => {
             double t = Ui.ReducedMotion ? 1 : Math.Clamp(System.Diagnostics.Stopwatch.GetElapsedTime(resizeStarted).TotalMilliseconds / 150, 0, 1); double eased = 1 - Math.Pow(1 - t, 3);
             int Mix(int a, int b) => (int)Math.Round(a + (b - a) * eased);
@@ -70,11 +77,46 @@ internal sealed class PanelWindow : Window
         Closed += (_, _) => { closed = true; dismissTimer.Stop(); resizeTimer.Stop(); exitAnimation?.Stop(); };
     }
     void Dismiss()
+        => Dismiss(restoreFocus: true);
+    void Dismiss(bool restoreFocus)
     {
-        if (dismissTimer.IsEnabled) return;
+        if (closed || !AppWindow.IsVisible) return;
+        if (dismissTimer.IsEnabled) { restoreFocusAfterDismiss &= restoreFocus; return; }
+        restoreFocusAfterDismiss = restoreFocus; ++contentRevision; PageId = "";
         resizeTimer.Stop();
-        if (Ui.ReducedMotion) { AppWindow.Hide(); Dismissed?.Invoke(); return; }
+        if (Ui.ReducedMotion) { FinishDismiss(); return; }
         exitAnimation = Ui.Animate(layout, "Opacity", 0, 90); dismissTimer.Start();
+    }
+    void FinishDismiss()
+    {
+        if (closed) return;
+        AppWindow.Hide(); Dismissed?.Invoke(restoreFocusAfterDismiss);
+    }
+    void CheckOutsideDismiss() => DispatcherQueue.TryEnqueue(Microsoft.UI.Dispatching.DispatcherQueuePriority.Low, () => {
+        if (closed || active || ownedInteractions > 0 || returningFromPicker || !AppWindow.IsVisible || Native.ForegroundOwnedBy(this)) return;
+        Dismiss(restoreFocus: false);
+    });
+    public IDisposable KeepOpenForPicker()
+    {
+        ownedInteractions++;
+        return new PickerInteraction(() => {
+            ownedInteractions = Math.Max(0, ownedInteractions - 1);
+            if (closed || ownedInteractions != 0) return;
+            returningFromPicker = true;
+            DispatcherQueue.TryEnqueue(Microsoft.UI.Dispatching.DispatcherQueuePriority.Low, () => {
+                returningFromPicker = false;
+                if (closed || !AppWindow.IsVisible) return;
+                // Pickers are owned by the dock. Return to the panel only when
+                // Windows returns focus to that owner; never steal another app's focus.
+                if (dockOwner != null && Native.IsForeground(dockOwner)) Activate();
+                else CheckOutsideDismiss();
+            });
+        });
+    }
+    sealed class PickerInteraction(Action release) : IDisposable
+    {
+        Action? completion = release;
+        public void Dispose() => Interlocked.Exchange(ref completion, null)?.Invoke();
     }
     void ApplyBounds(PreviewRect bounds, double scale)
     {
@@ -117,6 +159,7 @@ internal sealed class PanelWindow : Window
     public void ShowPage(string id, string title, string description, UIElement content, Window dock, RectInt32 area, bool wide = false, double? anchorX = null, double userScale = 1, bool newInteraction = false)
     {
         if (closed) return;
+        dockOwner = dock;
         bool replacement = bodyHost.Children.FirstOrDefault() != content;
         int revision = ++contentRevision;
         bool entering = !AppWindow.IsVisible || PageId != id;

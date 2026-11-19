@@ -6,6 +6,13 @@ Changes describe their effect for users and contributors. Tagged versions come f
 
 No additional changes recorded.
 
+## [0.17.7] - 2026-11-19
+
+### Fixed
+- Dismiss dock panels when focus moves outside, without bringing the dock in front of the application the user clicked.
+- Preserve panels while choosing files or folders and return to the panel after the owned picker closes.
+- Cancel stale content layout work when dismissing a panel, while keeping Escape and explicit close keyboard focus behavior.
+
 ## [0.17.6] - 2026-11-19
 
 ### Changed

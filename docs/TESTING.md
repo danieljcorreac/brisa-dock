@@ -46,3 +46,5 @@ Setup supports `--review`, `--review-error`, `--review-success`, `--review-busy`
 `Brisa-Setup.exe --check-layout` validates the supported window sizes and installation busy-state controls without showing a window or sending input. This complements earlier visual observations; it does not replace screenshots or physical accessibility checks.
 
 `dotnet run --project tests/Brisa.Checks -c Release -- github-update-probe <installed-version> <isolated-cache>` exercises the production metadata/download verifier against the fixed repository. It never installs or opens the dock. A newer published stable release must exist to exercise downloading. The regular checks use inert HTTP/archive fixtures for invalid metadata, downgrades, prereleases, incorrect digests, truncated downloads and extraction cleanup.
+
+For panel dismissal changes, verify an actual click into another window, reopening a different widget, internal navigation, Escape, and opening/cancelling an owned file/folder picker. The clicked application must keep focus. Repeat with light or reduced-motion fixtures. Do not treat a programmatic activation simulation as evidence of a physical mouse click.

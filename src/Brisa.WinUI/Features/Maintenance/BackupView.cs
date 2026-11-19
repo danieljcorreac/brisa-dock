@@ -20,10 +20,9 @@ public sealed partial class MainWindow
     async void ExportBackup()
     {
         var picker = new FileSavePicker { SuggestedFileName = "Brisa-copia-" + DateTime.Now.ToString("yyyyMMdd-HHmm"), SuggestedStartLocation = PickerLocationId.DocumentsLibrary };
-        picker.FileTypeChoices.Add("Copia de Brisa", new List<string> { ".json" }); WinRT.Interop.InitializeWithWindow.Initialize(picker, WinRT.Interop.WindowNative.GetWindowHandle(this));
-        try
+        picker.FileTypeChoices.Add("Copia de Brisa", new List<string> { ".json" }); try
         {
-            var file = await picker.PickSaveFileAsync(); if (file == null || closing) return;
+            var file = await PickForPanel(picker, () => picker.PickSaveFileAsync()); if (file == null || closing) return;
             SaveSessionState(); await FileIO.WriteTextAsync(file, SettingsBackup.Export(settings));
             ShowMessage("Copia guardada", "Se ha guardado " + file.Name + ".");
         }
@@ -31,10 +30,9 @@ public sealed partial class MainWindow
     }
     async void PreviewBackup()
     {
-        var picker = new FileOpenPicker(); picker.FileTypeFilter.Add(".json"); WinRT.Interop.InitializeWithWindow.Initialize(picker, WinRT.Interop.WindowNative.GetWindowHandle(this));
-        try
+        var picker = new FileOpenPicker(); picker.FileTypeFilter.Add(".json"); try
         {
-            var file = await picker.PickSingleFileAsync(); if (file == null || closing) return;
+            var file = await PickForPanel(picker, () => picker.PickSingleFileAsync()); if (file == null || closing) return;
             if ((await file.GetBasicPropertiesAsync()).Size > SettingsBackup.MaxBytes) throw new InvalidDataException("La copia supera el límite de 5 MB.");
             var backup = SettingsBackup.Read(await FileIO.ReadTextAsync(file)); if (closing) return;
             ShowBackupPreview(backup, file.Name);

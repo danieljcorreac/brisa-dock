@@ -217,8 +217,8 @@ public sealed partial class MainWindow
     }
     async void SelectCodex()
     {
-        var picker = new Windows.Storage.Pickers.FileOpenPicker(); WinRT.Interop.InitializeWithWindow.Initialize(picker, WinRT.Interop.WindowNative.GetWindowHandle(this)); picker.FileTypeFilter.Add(".exe");
-        try { var file = await picker.PickSingleFileAsync(); if (file == null) return; if (!file.Name.Equals("codex.exe", StringComparison.OrdinalIgnoreCase)) { ShowMessage("Selecciona Codex", "Elige el archivo codex.exe de tu instalación de Codex CLI."); return; } settings.CodexExecutable = file.Path; Save(); ShowUsage("chatgpt"); }
+        var picker = new Windows.Storage.Pickers.FileOpenPicker(); picker.FileTypeFilter.Add(".exe");
+        try { var file = await PickForPanel(picker, () => picker.PickSingleFileAsync()); if (file == null) return; if (!file.Name.Equals("codex.exe", StringComparison.OrdinalIgnoreCase)) { ShowMessage("Selecciona Codex", "Elige el archivo codex.exe de tu instalación de Codex CLI."); return; } settings.CodexExecutable = file.Path; Save(); ShowUsage("chatgpt"); }
         catch { ShowMessage("No se pudo seleccionar", "Inténtalo de nuevo desde el widget de ChatGPT."); }
     }
     void ShowClaudeSetup()
