@@ -29,4 +29,4 @@ Review the draft and its downloaded assets before final publication. There is no
 
 SHA-256 confirms integrity against a known value; it does not authenticate an unsigned publisher. Do not disable Windows protections or change execution policy to run packages. Initial signing is intentionally unpaid and no commercial certificate is provided.
 
-CI files do not configure branch protection or prove a GitHub run passed. The updater checks stable releases from the fixed repository at most daily, delegates private authentication to GitHub CLI and verifies the GitHub SHA-256 digest plus archive version and manifest before review. See [updates](UPDATES.md).
+CI files do not configure branch protection or prove a GitHub run passed. The updater checks stable releases from the fixed repository at most daily, uses anonymous HTTPS without GitHub CLI or credentials and verifies the GitHub SHA-256 digest plus archive version and manifest before review. See [updates](UPDATES.md).

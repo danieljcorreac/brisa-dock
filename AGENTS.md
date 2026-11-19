@@ -32,4 +32,4 @@ Keep the repository root for solution/build configuration and community document
 
 `main` is stable; `develop` integrates changes. Use scoped branches and record meaningful changes in the changelog. Never invent history or test results.
 
-Follow the user's current authorization before creating remotes, uploading, tagging, publishing or changing visibility. Personal distribution uses the private `danieljcorreac/brisa-dock` repository; never make it public without explicit authorization. Do not store publication credentials in the repository.
+Follow the user's current authorization before creating remotes, uploading, tagging, publishing or changing visibility. The public repository is `danieljcorreac/brisa-dock`. Changes to `main` and `develop` must go through pull requests and the required GitHub Actions `verify` check, including maintainer changes. Do not bypass branch protections. Do not store publication credentials in the repository.

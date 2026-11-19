@@ -6,6 +6,15 @@ Changes describe their effect for users and contributors. Tagged versions come f
 
 No additional changes recorded.
 
+## [0.17.6] - 2026-11-19
+
+### Changed
+- Publish the source and releases for public downloads and fork-based contributions.
+- Require pull requests and successful Windows verification on main and develop, including administrator changes.
+- Retrieve update metadata and packages through anonymous HTTPS without GitHub CLI, accounts or tokens.
+- Report unavailable releases and temporary GitHub rate limits clearly.
+- Bind newly prepared release metadata to the exact stable source commit.
+
 ## [0.17.5] - 2026-11-18
 
 First personal GitHub release. Earlier versions below were local development candidates.

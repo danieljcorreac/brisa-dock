@@ -1,16 +1,13 @@
-# Remote repository setup
+# Repository and contribution flow
 
-Personal distribution repository: [`danieljcorreac/brisa-dock`](https://github.com/danieljcorreac/brisa-dock), private. Source starts from one reviewed initial snapshot; prior local history is archived outside the repository.
+Public repository: [`danieljcorreac/brisa-dock`](https://github.com/danieljcorreac/brisa-dock). The initial source snapshot starts from one reviewed commit; prior local development history remains archived outside the repository.
 
-Setup and verification:
+- `develop` is the default contribution branch. Normal feature/fix PRs target it.
+- `main` contains stable code and release tags. Release PRs promote verified changes from `develop`.
+- Both branches require pull requests, resolved conversations and the GitHub Actions `verify` check, bound to the GitHub Actions application and up-to-date with the base branch.
+- Rules apply to administrators too. Force pushes and branch deletion are blocked. No external approval is required for the sole maintainer to merge their own verified PR.
+- Public visibility grants reading and forking, not write access. External contributors submit PRs from their forks; only maintainers with write access can merge them.
+- Actions default to read-only. The manually invoked release job has scoped contents-write permissions and runs only from `main`. Never run contributor code with publishing secrets through `pull_request_target`.
+- Private vulnerability reporting is enabled. Issues and PR templates are maintained in `.github`.
 
-1. Create the private repository and push only the reviewed `main` and `develop` branches. Do not push archived development refs.
-2. Set `develop` as the default contribution branch; retain `main` as stable.
-3. Apply rules available for this account and visibility: pull requests, resolved conversations and `Windows / verify`; block force pushes and deletion of `main`/`develop`.
-4. Do not require an external approval that blocks the sole maintainer. Verify actual availability and configuration on GitHub.
-5. Enable private vulnerability reporting if available; templates do not configure it.
-6. Review Actions limits/budget and permissions: read-only by default, write access confined to the manual release job. Never execute contributor code through `pull_request_target` with publication permissions.
-7. Enable Issues with the supplied templates. Normal PRs target `develop`.
-8. Before making the repository public, repeat source/history, license and screenshot review. Creating a private remote does not authorize making it public.
-
-Publish binary packages as Release assets, not Git files. No credentials, account caches, personal settings or build output belong in the source history.
+Publish binary packages as Release assets, not Git files. No credentials, account caches, personal settings, old development refs or build outputs belong in source history. Recheck actual GitHub configuration after changing repository settings; files alone do not configure protections.
